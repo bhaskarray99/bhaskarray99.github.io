@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bhaskar Ray — Research</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;0,700;1,400&family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<!--
+  ╔══════════════════════════════════════════════════════════════════╗
+  ║               DATA CONFIGURATION — EDIT THIS BLOCK              ║
+  ╠══════════════════════════════════════════════════════════════════╣
+  ║  Excel on GitHub:                                                ║
+  ║   Upload .xlsx → open on GitHub → Raw → copy URL                ║
+  ║   Paste into EXCEL_URL                                           ║
+  ║                                                                  ║
+  ║  Publications sheet columns:                                     ║
+  ║   Title | Authors | Venue | Year | URL | Code_URL               ║
+  ║   | Notes | Type | Topic                                        ║
+  ║   Type = "published" (default) | "review" | "working"           ║
+  ╚══════════════════════════════════════════════════════════════════╝
+-->
+<script>
+const DATA_SOURCE         = "excel";
+const SHEETS_PUBLICATIONS_URL = "Publications.csv";
+const EXCEL_URL           = "./Publications.xlsx";
+const EXCEL_PUB_SHEET     = "Publications";
+const YOUR_NAME           = "Bhaskar Ray";
+</script>
+
+<style>
+  :root {
+    --bg: #f7f5f0;
+    --white: #ffffff;
+    --ink: #1a1a2e;
+    --ink2: #3d3d5c;
+    --ink3: #66080e;
+    --muted: #8a8a9e;
+    --accent: #2e5c8a;
+    --accent2: #c0392b;
+    --accent-light: #eaf1f8;
+    --border: #e0ddd6;
+    --gold: #b8962e;
+    --nav-h: 64px;
+    --banner-h: 220px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { background: var(--bg); color: var(--ink); font-family: 'IBM Plex Sans', sans-serif; font-size: 15px; line-height: 1.7; }
+  a { color: var(--accent); text-decoration: none; transition: color 0.2s; }
+  a:hover { color: var(--accent2); }
+
+  /* ══════════════════════════════════════
+     NAVBAR
+     ══════════════════════════════════════ */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0;
+    height: var(--nav-h);
+    z-index: 200;
+    display: flex; align-items: center; justify-content: flex-end;
+    padding: 0 24px;
+    background: rgba(26,26,46,0);
+    backdrop-filter: blur(0px);
+    border-bottom: 1px solid transparent;
+    transition: background 0.4s ease, backdrop-filter 0.4s ease,
+                border-color 0.4s ease, box-shadow 0.4s ease;
+    pointer-events: none;
+  }
+
+  nav.scrolled {
+    background: rgba(26,26,46,0.96);
+    backdrop-filter: blur(14px);
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+    box-shadow: 0 2px 24px rgba(0,0,0,0.25);
+  }
+
+  /* desktop nav links */
+  .nav-links {
+    display: flex; gap: 6px; align-items: center;
+    opacity: 0; transform: translateY(-6px);
+    transition: opacity 0.4s ease, transform 0.4s ease;
+    pointer-events: none;
+  }
+
+  nav.scrolled .nav-links {
+    opacity: 1; transform: translateY(0); pointer-events: auto;
+  }
+
+  .nav-links a {
+    color: rgba(255,255,255,0.62);
+    font-size: 12px; font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase; padding: 7px 18px;
+    border-radius: 6px; border: 1px solid transparent; transition: all 0.2s;
+  }
+
+  .nav-links a:hover {
+    color: #fff; background: rgba(255,255,255,0.09);
+    border-color: rgba(255,255,255,0.14);
+  }
+
+  /* home button */
+  .nav-links a.home-btn {
+    color: rgba(255,255,255,0.62);
+    border-color: transparent; background: transparent;
+  }
+
+  .nav-links a.home-btn:hover {
+    color: #fff; background: rgba(255,255,255,0.09);
+  }
+
+  /* active page — gold */
+  .nav-links a.active-page {
+    color: var(--gold);
+    border-color: rgba(184,150,46,0.35);
+    background: rgba(184,150,46,0.10);
+  }
+
+  .nav-links a.active-page:hover {
+    background: rgba(184,150,46,0.18);
+    color: var(--gold);
+  }
+
+  /* ── HAMBURGER ── */
+  .hamburger {
+    display: none;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 24px; height: 18px;
+    background: none; border: none;
+    cursor: pointer; padding: 0;
+    pointer-events: auto;  /* always clickable — punches through nav pointer-events:none */
+    position: relative; z-index: 300;
+  }
+
+  .hamburger span {
+    display: block; width: 100%; height: 2px;
+    background: rgba(255,255,255,0.85);
+    border-radius: 2px; transition: all 0.25s ease;
+  }
+
+  .hamburger.open span:nth-child(1) { transform: translateY(8px) rotate(45deg); }
+  .hamburger.open span:nth-child(2) { opacity: 0; }
+  .hamburger.open span:nth-child(3) { transform: translateY(-8px) rotate(-45deg); }
+
+  /* ══════════════════════════════════════
+     HERO BANNER
+     ══════════════════════════════════════ */
+  .hero-banner {
+    position: relative; width: 100%;
+    height: var(--banner-h); overflow: hidden;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 45%, #0f3460 100%);
+  }
+
+  .hero-banner-img {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    object-fit: cover; opacity: 0.4;
+  }
+
+  .hero-pattern {
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(circle at 18% 55%, rgba(46,92,138,0.5) 0%, transparent 52%),
+      radial-gradient(circle at 82% 18%, rgba(192,57,43,0.2) 0%, transparent 42%);
+  }
+
+  .hero-grid {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+    background-size: 48px 48px;
+  }
+
+  .hero-fade {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    height: 80px;
+    background: linear-gradient(to bottom, transparent, var(--bg));
+  }
+
+  /* banner page title — bottom left */
+  .banner-title {
+    position: absolute; bottom: 48px; left: 48px; z-index: 10;
+  }
+
+  .banner-title h1 {
+    font-family: 'Lora', serif; font-size: 28px; font-weight: 700;
+    color: #fff; letter-spacing: 0.01em; line-height: 1.2;
+  }
+
+  .banner-title p {
+    font-size: 12px; font-family: 'IBM Plex Mono', monospace;
+    color: rgba(255,255,255,0.45); letter-spacing: 0.1em; margin-top: 4px;
+  }
+
+  /* banner nav — bottom right (desktop only) */
+  .banner-nav {
+    position: absolute; bottom: 28px; right: 44px;
+    display: flex; gap: 10px; z-index: 10;
+  }
+
+  .banner-nav a {
+    color: rgba(255,255,255,0.88); font-size: 12px; font-weight: 600;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 9px 22px; border-radius: 6px;
+    border: 1px solid rgba(255,255,255,0.24);
+    background: rgba(15,15,35,0.42); backdrop-filter: blur(12px);
+    transition: all 0.22s;
+  }
+
+  .banner-nav a:hover {
+    background: rgba(255,255,255,0.16);
+    border-color: rgba(255,255,255,0.44);
+    color: #fff; transform: translateY(-2px);
+  }
+
+  .banner-nav a.home-gl {
+    color: rgba(255,255,255,0.88);
+    border-color: rgba(255,255,255,0.24);
+    background: rgba(15,15,35,0.42);
+  }
+
+  /* active page in banner nav — gold */
+  .banner-nav a.active-gl {
+    color: var(--ink3);
+    border-color: rgba(184,150,46,0.45);
+    background: rgba(184,150,46,0.25);
+  }
+
+  .banner-nav a.active-gl:hover {
+    background: rgba(184,150,46,0.25); color: var(--gold);
+  }
+
+  /* ══════════════════════════════════════
+     PAGE CONTENT
+     ══════════════════════════════════════ */
+  .page-wrap { max-width: 900px; margin: 0 auto; padding: 40px 36px 96px; }
+
+  /* ── SECTIONS ── */
+  .section { margin-bottom: 64px; scroll-margin-top: calc(var(--nav-h) + 16px); }
+
+  .section-header {
+    display: flex; align-items: center; gap: 14px;
+    margin-bottom: 28px; padding-bottom: 14px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .section-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px; color: var(--gold); letter-spacing: 0.1em;
+  }
+
+  .section-title {
+    font-family: 'Lora', serif;
+    font-size: 21px; font-weight: 700; color: var(--ink);
+  }
+
+  /* ── RESEARCH INTERESTS ── */
+  .interest-list { list-style: none; columns: 2; column-gap: 36px; }
+
+  .interest-list li {
+    display: flex; align-items: baseline; gap: 10px;
+    font-size: 14px; color: var(--ink2);
+    padding: 7px 0; border-bottom: 1px dashed var(--border);
+    break-inside: avoid;
+  }
+
+  .interest-list li::before {
+    content: '▸'; color: var(--gold); font-size: 11px; flex-shrink: 0;
+  }
+
+  /* ── PROJECTS ── */
+  .project-card {
+    background: var(--white); border: 1px solid var(--border);
+    border-left: 3px solid var(--accent); border-radius: 4px;
+    padding: 18px 22px; margin-bottom: 14px; transition: box-shadow 0.2s;
+  }
+
+  .project-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.07); }
+
+  .project-title {
+    font-family: 'Lora', serif; font-size: 15px;
+    font-weight: 600; color: var(--ink); margin-bottom: 6px;
+  }
+
+  .project-desc { font-size: 13px; color: var(--ink2); line-height: 1.65; margin-bottom: 8px; }
+
+  .project-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+
+  .project-tag {
+    background: rgba(46,92,138,0.06); color: var(--muted);
+    font-size: 11px; font-family: 'IBM Plex Mono', monospace;
+    padding: 2px 9px; border-radius: 3px;
+  }
+
+  .project-status {
+    display: inline-block; font-size: 10px; font-weight: 600;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 2px 8px; border-radius: 3px; margin-bottom: 6px;
+  }
+
+  .status-active { background: rgba(46,138,92,0.1); color: #2e8a5c; }
+  .status-collab { background: rgba(46,92,138,0.1); color: var(--accent); }
+
+  /* ── PUBLICATIONS ── */
+  .pub-year-group { margin-bottom: 36px; }
+
+  .pub-year-label {
+    display: inline-block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--white);
+    background: var(--ink);
+    letter-spacing: 0.1em;
+    padding: 4px 14px;
+    border-radius: 4px;
+    border-left: 3px solid var(--gold);
+    margin-bottom: 18px;
+  }
+
+  .pub-item {
+    display: flex; gap: 16px;
+    padding: 16px 0; border-bottom: 1px dashed var(--border);
+  }
+
+  .pub-item:last-child { border-bottom: none; }
+
+  .pub-item.under-review { border-left: 2px solid var(--gold); padding-left: 14px; }
+  .pub-item.working { border-left: 2px solid var(--muted); padding-left: 14px; opacity: 0.88; }
+
+  .pub-num {
+    font-family: 'IBM Plex Mono', monospace; font-size: 13px;
+    color: var(--gold); font-weight: 500;
+    flex-shrink: 0; min-width: 32px; padding-top: 2px;
+  }
+
+  .pub-title-link {
+    font-family: 'Lora', serif; font-size: 15px; font-weight: 600;
+    color: var(--ink); line-height: 1.4; margin-bottom: 5px; display: block;
+    transition: color 0.2s;
+  }
+
+  a.pub-title-link:hover {
+    color: var(--accent2);
+    text-decoration: underline;
+    text-decoration-color: rgba(192,57,43,0.4);
+    text-underline-offset: 3px;
+  }
+
+  .pub-authors { font-size: 13px; color: var(--ink2); margin-bottom: 3px; line-height: 1.5; }
+  .pub-authors strong { color: var(--ink); font-weight: 600; }
+  .pub-venue { font-size: 12px; font-style: italic; color: var(--muted); margin-bottom: 6px; }
+
+  .pub-badges { display: flex; gap: 6px; flex-wrap: wrap; }
+
+  .pub-badge {
+    display: inline-block; font-size: 10px;
+    font-family: 'IBM Plex Mono', monospace;
+    letter-spacing: 0.05em; padding: 2px 9px; border-radius: 3px;
+  }
+
+  .badge-code  { background: rgba(192,57,43,0.07); color: var(--accent2); border: 1px solid rgba(192,57,43,0.18); }
+  .badge-note  { background: rgba(46,92,138,0.07); color: var(--accent); border: 1px solid rgba(46,92,138,0.18); }
+  .badge-review  { background: rgba(184,150,46,0.1); color: var(--gold); border: 1px solid rgba(184,150,46,0.22); }
+  .badge-working { background: rgba(60,60,80,0.07); color: var(--muted); border: 1px solid rgba(60,60,80,0.16); }
+
+  /* ── FILTER BAR ── */
+  .filter-bar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 28px; }
+
+  .filter-chip {
+    background: var(--white); border: 1px solid var(--border);
+    border-radius: 999px; padding: 5px 16px;
+    font-size: 12px; color: var(--muted); cursor: pointer;
+    transition: all 0.18s; font-family: 'IBM Plex Mono', monospace;
+    letter-spacing: 0.04em;
+  }
+
+  .filter-chip:hover { border-color: var(--accent); color: var(--accent); }
+
+  .filter-chip.active {
+    background: rgba(46,92,138,0.1);
+    border-color: var(--accent); color: var(--accent);
+  }
+
+  /* ── LOADING / ERROR / EMPTY ── */
+  .data-loading {
+    display: flex; align-items: center; gap: 10px;
+    color: var(--muted); font-size: 13px;
+    font-family: 'IBM Plex Mono', monospace; padding: 14px 0;
+  }
+
+  .mini-spinner {
+    width: 16px; height: 16px;
+    border: 2px solid var(--border); border-top-color: var(--accent);
+    border-radius: 50%; animation: spin 0.7s linear infinite; flex-shrink: 0;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .data-error {
+    background: rgba(192,57,43,0.06); border: 1px solid rgba(192,57,43,0.2);
+    border-radius: 6px; padding: 14px 18px; font-size: 13px;
+    color: var(--accent2); font-family: 'IBM Plex Mono', monospace; line-height: 1.7;
+  }
+
+  .empty-state {
+    text-align: center; padding: 40px 20px;
+    color: var(--muted); font-size: 13px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    text-align: center; padding: 26px 0;
+    border-top: 1px solid var(--border);
+    font-size: 12px; color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace; letter-spacing: 0.04em;
+  }
+
+  /* ══════════════════════════════════════
+     ANIMATIONS
+     ══════════════════════════════════════ */
+  .fade-in { opacity: 0; transform: translateY(16px); animation: fadeUp 0.55s ease forwards; }
+  @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
+  .fade-in:nth-child(1) { animation-delay: 0.05s; }
+  .fade-in:nth-child(2) { animation-delay: 0.12s; }
+  .fade-in:nth-child(3) { animation-delay: 0.19s; }
+  .fade-in:nth-child(4) { animation-delay: 0.26s; }
+
+  /* ══════════════════════════════════════
+     RESPONSIVE — MOBILE
+     ══════════════════════════════════════ */
+  @media (max-width: 700px) {
+
+    /* hide desktop banner nav */
+    .banner-nav { display: none; }
+
+    /* show hamburger — always clickable */
+    .hamburger { display: flex; }
+
+    /* dropdown nav menu */
+    .nav-links {
+      display: none;
+      flex-direction: column;
+      position: absolute;
+      top: var(--nav-h);
+      right: 0;
+      width: 200px;
+      background: rgba(26,26,46,0.98);
+      backdrop-filter: blur(14px);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 0 0 0 10px;
+      padding: 10px 0;
+      gap: 0;
+      opacity: 0;
+      transform: translateY(-8px);
+      transition: opacity 0.25s ease, transform 0.25s ease;
+      pointer-events: none;
+    }
+
+    .nav-links.open {
+      display: flex; opacity: 1;
+      transform: translateY(0); pointer-events: auto;
+    }
+
+    .nav-links a {
+      padding: 12px 24px; font-size: 13px;
+      border-radius: 0; border: none;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      width: 100%; text-align: left; letter-spacing: 0.06em;
+    }
+
+    .nav-links a:last-child { border-bottom: none; }
+    .nav-links a:hover { background: rgba(255,255,255,0.08); }
+
+    /* active page in dropdown */
+    .nav-links a.active-page {
+      color: var(--gold);
+      background: rgba(184,150,46,0.08);
+      border-left: 2px solid var(--gold);
+      padding-left: 22px;
+    }
+
+    /* banner title adjustment */
+    .banner-title { left: 24px; bottom: 36px; }
+    .banner-title h1 { font-size: 22px; }
+
+    /* layout */
+    .page-wrap { padding: 28px 18px 60px; }
+    .interest-list { columns: 1; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══ NAVBAR ══ -->
+<nav id="navbar">
+  <div class="nav-links" id="navLinks">
+    <a href="index.html" class="home-btn">⌂ Home</a>
+    <a href="research.html" class="active-page">Research</a>
+    <a href="experience.html">Experience</a>
+    <a href="conferences.html">Conferences</a>
+  </div>
+  <button class="hamburger" id="hamburger" onclick="toggleMenu()" aria-label="Menu">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<!-- ══ HERO BANNER ══ -->
+<header class="hero-banner" id="banner">
+  <!--
+    Same banner as index.html:
+    <img class="hero-banner-img" src="banner.svg" alt="">
+  -->
+  <div class="hero-pattern"></div>
+  <div class="hero-grid"></div>
+  <div class="hero-fade"></div>
+
+  <div class="banner-title">
+    <h1>Research</h1>
+  </div>
+
+  <div class="banner-nav">
+    <a href="index.html" class="home-gl">⌂ Home</a>
+    <a href="research.html" class="active-gl">Research</a>
+    <a href="experience.html">Experience</a>
+    <a href="conferences.html">Conferences</a>
+  </div>
+</header>
+
+<!-- ══ CONTENT ══ -->
+<div class="page-wrap">
+
+  <!-- 01 RESEARCH INTERESTS -->
+  <section class="section fade-in">
+    <div class="section-header">
+      <h2 class="section-title">Research Interests</h2>
+    </div>
+    <ul class="interest-list">
+      <li>Federated Learning</li>
+      <li>Statistical Inference</li>
+      <li>Optimization Methods</li>
+      <li>Computational Statistics</li>
+      <li>Network data</li>
+      <li>Natural Language Processing</li>
+    </ul>
+  </section>
+
+  <!-- 02 ONGOING PROJECTS -->
+  <section class="section fade-in">
+    <div class="section-header">
+      <h2 class="section-title">Ongoing Projects</h2>
+    </div>
+
+    <div class="project-card">
+      <span class="project-status status-active">Dissertation Project</span>
+      <div class="project-title">PACE: Privacy Aware Collaborative Estimation for Heterogenous GLMs</div>
+      <div class="project-desc">
+        We propose a novel two-step method of parameter estimation for a broad class of Generalized Linear Models under a distributed data framework with privacy restrictions on data sharing. Participating sites obtain data from the same distribution, the true parameter values varying across clusters. We conduct a hypothesis test-type clustering and subsequently, a decentralized collaborative estimation and compare the convergence and accuracy guarantees to local estimation. R package <a herf="https://cran.r-project.org/web/packages/sgd/index.html" target="_blank">sgd</a> was modified as <a href="https://github.com/bhaskarray99/sgditer" target="_blank">sgditer</a> for implementation of proposed method.
+      </div>
+      <div class="project-tags">
+        <span class="project-tag">Federated Learning, Heterogeneity</span>
+        <span class="project-tag">Collaborators: Dr. Srijan Sengupta, Dr. Aritra Mitra</span>
+      </div>
+    </div>
+
+    <div class="project-card">
+      <span class="project-status status-active">Dissertation Project</span>
+      <div class="project-title">Asymptotic Distribution of Averaged Federated Estimator with GLMs</div>
+      <div class="project-desc">
+        We aim to quantify the asymptotic distribution of the FL approximation to the global MLE for GLMs, accounting for statistical uncertainty and optimization error. 
+      </div>
+      <div class="project-tags">
+        <span class="project-tag">Federated Learning, Asymptotics</span>
+        <span class="project-tag">Collaborators: Dr. Srijan Sengupta, Dr. Aritra Mitra</span>
+      </div>
+    </div>
+
+    <div class="project-card" id="gut-brain">
+      <span class="project-status status-collab">Interdisciplinary Collaboration</span>
+      <div class="project-title">A gut-brain interaction controlling reward learning</div>
+      <div class="project-desc">
+        We are working on the statistical analysis of the timescale over which gut-derived signals based on food content modulate dopamine release, and how they interact with dopamine signals previously identified as critical for food reward learning and motivation.
+      </div>
+      <div class="project-tags">
+        <span class="project-tag">Neuroscience</span>
+        <span class="project-tag">Collaborators: Dr. William Howe, Dr. Srijan Sengupta, Tung Bui</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 03 PUBLICATIONS — auto-loaded -->
+  <section class="section fade-in" id="publications">
+    <div class="section-header">
+      <h2 class="section-title">Publications</h2>
+    </div>
+
+    <div class="filter-bar" id="pub-filters" style="display:none">
+      <button class="filter-chip active" data-filter="all"       onclick="filterPubs(this)">All</button>
+      <button class="filter-chip"        data-filter="published" onclick="filterPubs(this)">Published</button>
+      <button class="filter-chip"        data-filter="review"    onclick="filterPubs(this)">Under Review</button>
+      <button class="filter-chip"        data-filter="working"   onclick="filterPubs(this)">Working Papers</button>
+    </div>
+
+    <div id="pub-list">
+      <div class="data-loading"><div class="mini-spinner"></div> Loading publications…</div>
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  © <span id="yr"></span> Bhaskar Ray · <a href="index.html" style="color:var(--muted)">← Back to home</a>
+</footer>
+
+<!-- ══ SCRIPTS ══ -->
+<script>
+document.getElementById('yr').textContent = new Date().getFullYear();
+
+// ── Scroll navbar ──────────────────────────────────────────────
+const navbar = document.getElementById('navbar');
+const banner = document.getElementById('banner');
+
+function onScroll() {
+  navbar.classList.toggle('scrolled', banner.getBoundingClientRect().bottom <= 0);
+}
+window.addEventListener('scroll', onScroll, { passive: true });
+onScroll();
+
+// ── Hamburger menu ─────────────────────────────────────────────
+function toggleMenu() {
+  document.getElementById('navLinks').classList.toggle('open');
+  document.getElementById('hamburger').classList.toggle('open');
+}
+
+// close when clicking outside
+document.addEventListener('click', e => {
+  const links = document.getElementById('navLinks');
+  const btn   = document.getElementById('hamburger');
+  if (!navbar.contains(e.target)) {
+    links.classList.remove('open');
+    btn.classList.remove('open');
+  }
+});
+
+// ── CSV parser ─────────────────────────────────────────────────
+function parseCSV(text) {
+  const lines = text.trim().split('\n');
+  const headers = splitLine(lines[0]).map(h => h.trim());
+  return lines.slice(1).filter(l => l.trim()).map(l => {
+    const vals = splitLine(l);
+    const row = {};
+    headers.forEach((h, i) => { row[h] = (vals[i] || '').trim(); });
+    return row;
+  });
+}
+
+function splitLine(line) {
+  const out = []; let cur = '', inQ = false;
+  for (const ch of line) {
+    if (ch === '"') { inQ = !inQ; }
+    else if (ch === ',' && !inQ) { out.push(cur); cur = ''; }
+    else { cur += ch; }
+  }
+  out.push(cur); return out;
+}
+
+// ── Loaders ────────────────────────────────────────────────────
+async function loadSheets() {
+  if (!SHEETS_PUBLICATIONS_URL || SHEETS_PUBLICATIONS_URL.includes('YOUR_')) return null;
+  try {
+    const r = await fetch(SHEETS_PUBLICATIONS_URL);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    return parseCSV(await r.text());
+  } catch (e) { console.warn('Sheets load failed:', e); return null; }
+}
+
+async function loadExcel() {
+  if (!EXCEL_URL || EXCEL_URL.includes('YOUR_')) return null;
+  try {
+    const r = await fetch(EXCEL_URL);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const wb = XLSX.read(await r.arrayBuffer(), { type: 'array' });
+    const ws = wb.Sheets[EXCEL_PUB_SHEET];
+    if (!ws) return null;
+    return XLSX.utils.sheet_to_json(ws, { defval: '' }).map(row => {
+      const out = {};
+      Object.keys(row).forEach(k => { out[k.trim()] = String(row[k]).trim(); });
+      return out;
+    });
+  } catch (e) { console.warn('Excel load failed:', e); return null; }
+}
+
+// ── Publication state ──────────────────────────────────────────
+let allPubs = [];
+
+function renderPublications(rows) {
+  allPubs = rows;
+  drawPubs(rows);
+  if (rows.length > 0) document.getElementById('pub-filters').style.display = 'flex';
+}
+
+function filterPubs(btn) {
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  const f = btn.dataset.filter;
+  const filtered = f === 'all' ? allPubs
+    : allPubs.filter(r => (r.Type || 'published').toLowerCase() === f);
+  drawPubs(filtered);
+}
+
+function drawPubs(rows) {
+  const el = document.getElementById('pub-list');
+  if (!rows.length) {
+    el.innerHTML = '<div class="empty-state">No publications found for this filter.</div>';
+    return;
+  }
+
+  const sorted = [...rows].sort((a, b) => (parseInt(b.Year) || 0) - (parseInt(a.Year) || 0));
+
+  const byYear = {};
+  sorted.forEach(r => { const y = r.Year || 'n.d.'; (byYear[y] = byYear[y] || []).push(r); });
+
+  const safe = YOUR_NAME.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  let counter = 0;
+
+  el.innerHTML = Object.entries(byYear).sort((a, b) => (parseInt(b[0]) || 0) - (parseInt(a[0]) || 0)).map(([year, items]) => {
+    const itemsHtml = items.map(r => {
+      counter++;
+      const type    = (r.Type || 'published').toLowerCase();
+      const authors = (r.Authors || '').replace(new RegExp(safe, 'g'), `<strong>${YOUR_NAME}</strong>`);
+      const titleEl = r.URL
+        ? `<a class="pub-title-link" href="${r.URL}" target="_blank" rel="noopener">${r.Title}</a>`
+        : `<span class="pub-title-link">${r.Title}</span>`;
+
+      const badges = [];
+      if (type === 'review')  badges.push(`<span class="pub-badge badge-review">Under Review</span>`);
+      if (type === 'working') badges.push(`<span class="pub-badge badge-working">Working Paper</span>`);
+      if (r.Code_URL) badges.push(`<a href="${r.Code_URL}" target="_blank" class="pub-badge badge-code">Code</a>`);
+      if (r.Notes)    badges.push(`<span class="pub-badge badge-note">${r.Notes}</span>`);
+      if (r.Topic)    badges.push(`<span class="pub-badge badge-note">${r.Topic}</span>`);
+
+      const cls = type === 'review' ? 'pub-item under-review'
+                : type === 'working' ? 'pub-item working'
+                : 'pub-item';
+
+      return `
+        <div class="${cls}">
+          <div class="pub-num">[${counter}]</div>
+          <div>
+            ${titleEl}
+            <div class="pub-authors">${authors}</div>
+            <div class="pub-venue">${r.Venue || ''}${r.Year ? ' · ' + r.Year : ''}</div>
+            ${badges.length ? `<div class="pub-badges">${badges.join('')}</div>` : ''}
+          </div>
+        </div>`;
+    }).join('');
+
+    return `<div class="pub-year-group"><div class="pub-year-label">${year}</div>${itemsHtml}</div>`;
+  }).join('');
+}
+
+// ── Main ───────────────────────────────────────────────────────
+async function loadAll() {
+  let pubs = null;
+
+  if (DATA_SOURCE === 'sheets' || DATA_SOURCE === 'both') pubs = await loadSheets();
+  if (!pubs && (DATA_SOURCE === 'excel' || DATA_SOURCE === 'both')) pubs = await loadExcel();
+
+  if (pubs) {
+    renderPublications(pubs);
+  } else {
+    document.getElementById('pub-list').innerHTML = `
+      <div class="data-error">
+        ⚠ Could not load publications.<br>
+        Check the DATA_SOURCE configuration at the top of this file.<br><br>
+        • Excel: set EXCEL_URL to the raw GitHub URL of your .xlsx file<br>
+        • Make sure the sheet tab is named exactly: <strong>${EXCEL_PUB_SHEET}</strong>
+      </div>`;
+  }
+}
+
+loadAll();
+</script>
+</body>
+</html>
